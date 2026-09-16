@@ -1,0 +1,31 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Q-ArcadeBot</title>
+<style>
+*{box-sizing:border-box;user-select:none}body{margin:0;background:#080808;color:white;font-family:system-ui;overflow:hidden}
+header{height:52px;padding:10px 14px;display:flex;justify-content:space-between;font-weight:800}
+main{height:calc(100dvh - 52px);display:flex;align-items:center;justify-content:center;padding:8px}
+canvas{width:min(100%,960px);aspect-ratio:16/9;background:#111;border-radius:12px;touch-action:none}
+.controls{position:fixed;bottom:14px;left:0;right:0;display:flex;justify-content:space-between;padding:0 18px;pointer-events:none}
+.controls div{display:flex;gap:10px;pointer-events:auto}button{width:64px;height:64px;border:0;border-radius:50%;background:#292929;color:#fff;font-size:22px}
+#start{position:fixed;inset:0;display:grid;place-items:center;background:#000b}#start button{width:auto;padding:0 26px;border-radius:16px}
+</style></head><body>
+<header><span id="title">Q-Arcade</span><span>⭐ <b id="score">0</b></span></header>
+<main><canvas id="c" width="960" height="540"></canvas></main>
+<div class="controls"><div><button id="l">◀</button><button id="r">▶</button></div><div><button id="a">A</button><button id="b">B</button></div></div>
+<div id="start"><button id="go">🎮 Iniciar partida</button></div>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d'),parts=location.pathname.split('/'),game=parts.at(-1),token=new URLSearchParams(location.search).get('token')||'';
+const names={pacman:'Pac-Man',mario:'Super Mario Bros.',doom:'DOOM',naves:'Naves',sunset:'Sunset Riders',carros:'Carros',circus:'Circus Charlie'};
+document.getElementById('title').textContent=names[game]||'Q-Arcade';
+let running=false,score=0,px=480,bullets=[],foes=[],left=false,right=false,ended=false;
+for(let i=0;i<7;i++)foes.push({x:Math.random()*900+30,y:40+Math.random()*160,v:40+Math.random()*90});
+function bind(id,set){let e=document.getElementById(id);['pointerdown','pointerup','pointercancel','pointerleave'].forEach(k=>e.addEventListener(k,z=>{z.preventDefault();set(k==='pointerdown')}))}
+bind('l',v=>left=v);bind('r',v=>right=v);
+document.getElementById('a').onpointerdown=()=>bullets.push({x:px,y:440});
+function draw(){x.clearRect(0,0,960,540);x.fillStyle='#050505';x.fillRect(0,0,960,540);x.fillStyle='#19dfff';x.fillRect(px-22,420,44,25);x.fillStyle='#ff4050';foes.forEach(f=>{x.beginPath();x.arc(f.x,f.y,15,0,7);x.fill()});x.fillStyle='white';bullets.forEach(b=>x.fillRect(b.x-2,b.y,4,10));x.font='20px system-ui';x.fillText('Arcade prototype',20,32)}
+function finish(){if(ended)return;ended=true;running=false;document.getElementById('go').textContent='Enviar puntuación';document.getElementById('start').style.display='grid';document.getElementById('go').onclick=submit}
+async function submit(){if(!token){alert('Esta partida necesita el token de lanzamiento.');return}let r=await fetch('/api/score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,game,score})}),j=await r.json();if(!r.ok)return alert(j.detail||'Error');alert(j.new_record?'🏆 ¡Nuevo récord!':'Puntuación guardada')}
+let last=0;function loop(t){let dt=Math.min(.03,(t-last)/1000||0);last=t;if(running){px+=((right?1:0)-(left?1:0))*320*dt;px=Math.max(25,Math.min(935,px));bullets.forEach(b=>b.y-=500*dt);bullets=bullets.filter(b=>b.y>-20);foes.forEach(f=>f.y+=f.v*dt);foes.forEach(f=>bullets.forEach(b=>{if(Math.hypot(b.x-f.x,b.y-f.y)<22){score+=100;f.y=700;b.y=-50}}));foes=foes.filter(f=>f.y<580);while(foes.length<7)foes.push({x:Math.random()*900+30,y:30,v:40+Math.random()*90});score+=Math.floor(dt*10);document.getElementById('score').textContent=score;if(foes.some(f=>f.y>400&&Math.abs(f.x-px)<40))finish()}draw();requestAnimationFrame(loop)}
+document.getElementById('go').onclick=()=>{running=true;ended=false;score=0;document.getElementById('start').style.display='none'};requestAnimationFrame(loop);
+</script></body></html>
