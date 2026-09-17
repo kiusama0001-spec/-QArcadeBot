@@ -7,7 +7,9 @@ GAMES = {
     "naves": ("Naves", "Shooter espacial estilo Galaga: oleadas y disparos."),
     "sunset": ("Sunset Riders", "Acción western arcade con reflejos y enemigos."),
     "carros": ("Carros", "Carrera arcade: esquiva tráfico y aguanta todo lo posible."),
-    "circus": ("Circus Charlie", "Desafíos de circo arcade basados en tiempo y precisión."),
+    "circus": ("Desafíos de circo arcade basados en tiempo y precisión."),
+    "pokemon": (
+        "Pokémon Crystal",
+        "RPG clásico de GBC: atrapa, entrena y combate.",
+    ),
 }
-
-IMAGE = lambda slug: f"https://placehold.co/800x450/png?text={slug.upper()}"
