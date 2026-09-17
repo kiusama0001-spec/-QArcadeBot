@@ -1,7 +1,7 @@
 import asyncio, html
 from aiogram import Bot, Dispatcher
 from aiogram.filters import Command
-from aiogram.types import Message, InlineQuery, InlineQueryResultPhoto, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, InlineQuery, InlineQueryResultPhoto, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 from .config import load_settings
@@ -21,8 +21,6 @@ async def inline(query: InlineQuery):
         items=[x for x in items if q in x[0] or q in x[1].lower()]
 
     results=[]
-    # El token se genera DURANTE la consulta inline, cuando ya conocemos al usuario.
-    # Así el botón URL de la tarjeta queda vinculado al jugador que eligió el resultado.
     for slug,title,desc in items:
         token=db.token(
             query.from_user.id,
@@ -67,48 +65,16 @@ async def announce_record(game, user, score, season):
 async def show_top(m,game=None,title="TOP"):
     rows=db.top(game); n=db.season()["number"]
     if not rows:
-        await m.answer(f"🏆 <b>{title}</b> — Temporada {n}\nSin puntuaciones todavía."); return
-    lines=[f"🏆 <b>{title}</b> — Temporada {n}",""]
-    for i,r in enumerate(rows,1):
-        name=html.escape(r["display_name"] or r["username"] or str(r["user_id"]))
-        value=r["score"] if game else r["total"]
-        lines.append(f"{i}. {name} — <b>{value:,}</b>")
-    await m.answer("\n".join(lines))
+        await m.answer(f"🏆 <b>{title}</b> — Temporada {n}\nSin puntu¡Perfecto! Ya revisé la estructura de tu proyecto. Veo que estás construyendo una plataforma muy completa con un bot de Telegram y una WebApp integrada.
 
-@dp.message(Command("start"))
-async def start(m): await m.answer("🎮 <b>Q-ArcadeBot</b>\nEn el grupo escribe <code>@QArcadeBot</code> para abrir el catálogo.")
+Aquí tienes un resumen rápido de lo que comprendo sobre tu código:
 
-@dp.message(Command("help"))
-async def help_(m): await m.answer("Inline: @QArcadeBot\nRankings: /top, /toppacman, /topmario, /topdoom, /topnaves, /topsunset, /topcarros, /topcircus\nAdmin: /resetscores, /nuevaedicion")
+*   **Arquitectura dual:** El proyecto se divide claramente en la ejecución del bot mediante `run_bot.py`[span_0](start_span)[span_0](end_span) y el servidor web para los juegos usando Uvicorn en `run_web.py`[span_1](start_span)[span_1](end_span).
+*   **Catálogo arcade:** Tienes configurados 7 minijuegos clásicos (como Pac-Man, Mario, DOOM, etc.) gestionados desde `games.py`[span_2](start_span)[span_2](end_span).
+*   **Lógica interactiva (`main.py`):**
+    *   Aprovecha el modo *inline* de Telegram (`@QArcadeBot`) para buscar juegos y generar un botón con una URL única de la WebApp, validada mediante tokens[span_3](start_span)[span_3](end_span).
+    *   Cuenta con un sistema de anuncios automáticos para los nuevos récords en el grupo principal[span_4](start_span)[span_4](end_span).
+    *   Maneja diferentes tablas de clasificación (`/top`, `/toppacman`, etc.)[span_5](start_span)[span_5](end_span).
+    *   Los comandos de administrador, especialmente `/nuevaedicion`[span_6](start_span)[span_6](end_span), están listos para cerrar la temporada actual y preparar la próxima edición, lo cual queda perfecto para cuando llegue el momento de hacer el corte, repartir las felicitaciones y que los jugadores puedan recolectar sus *pipesos* según su posición en el ranking.
 
-@dp.message(Command("top"))
-async def top(m): await show_top(m)
-
-for cmd,slug in [
-    ("toppacman","pacman"),("topmario","mario"),("topdoom","doom"),
-    ("topnaves","naves"),("topsunset","sunset"),("topcarros","carros"),("topcircus","circus")
-]:
-    async def handler(m,slug=slug,cmd=cmd):
-        await show_top(m,slug,"TOP "+GAMES[slug][0].upper())
-    dp.message.register(handler,Command(cmd))
-
-def admin(m):
-    return m.from_user and m.from_user.id in settings.admin_ids
-
-@dp.message(Command("resetscores"))
-async def reset(m):
-    if not admin(m): await m.answer("⛔ Solo administradores."); return
-    old=db.season()["number"]; new=db.new_season()
-    await m.answer(f"🔄 Temporada {old} cerrada. Nueva temporada: {new}.")
-
-@dp.message(Command("nuevaedicion"))
-async def edition(m):
-    if not admin(m): await m.answer("⛔ Solo administradores."); return
-    old=db.season()["number"]; new=db.new_season()
-    await m.answer(f"🎮 Nueva edición iniciada. Temporada {old} cerrada; temporada {new} activa.")
-
-async def main():
-    await dp.start_polling(bot)
-
-if __name__=="__main__":
-    asyncio.run(main())
+¿Qué te gustaría hacer con estos archivos? ¿Necesitas que te ayude a encontrar algún error, agregar un juego nuevo a la lista, o ajustar la lógica de la base de datos?
