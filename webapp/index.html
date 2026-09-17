@@ -1,62 +1,117 @@
-<script>
-const parts = location.pathname.split('/');
-const game = parts.at(-1) || 'mario';
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Q-Arcade</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        #title {
+            margin-bottom: 25px;
+            font-size: 1.5rem;
+            text-align: center;
+            color: #ffcc00;
+        }
+        #start-btn {
+            padding: 16px 32px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffffff;
+            background-color: #e63946;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(230, 57, 70, 0.4);
+        }
+        #start-btn:active {
+            transform: scale(0.96);
+        }
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
 
-const titles = {
-    pacman: 'Pac-Man (NES)',
-    mario: 'Super Mario Bros. (NES)',
-    tetris: 'Tetris (NES)',
-    excitebike: 'Excitebike (NES)',
-    contra: 'Contra (NES)',
-    naves: 'Galaga (NES)',
-    sunset: 'Sunset Riders (SNES)',
-    carros: 'Spy Hunter (NES)',
-    circus: 'Circus Charlie (NES)',
-    pokemon: 'Pokémon Crystal (GBC)'
-};
-document.getElementById('title').textContent = titles[game] || 'Q-ARCADE';
+    <h1 id="title">Q-ARCADE</h1>
+    <button id="start-btn" onclick="startGame()">🎮 EMPEZAR JUEGO</button>
+    <div id="game-container"></div>
 
-function getLocalRomPath(g) {
-    const baseUrl = 'https://raw.githubusercontent.com/kiusama0001-spec/-QArcadeBot/main/room/';
-    
-    const localRoms = {
-        mario: baseUrl + 'SuperMarioBros.nes',
-        pacman: baseUrl + 'PacMan.nes',
-        circus: baseUrl + 'CircusCharlie.nes',
-        naves: baseUrl + 'Galaga.nes',
-        carros: baseUrl + 'SpyHunter.nes',
-        sunset: baseUrl + 'SunsetRiders.sfc',
-        tetris: baseUrl + 'Tetris.nes',
-        excitebike: baseUrl + 'Excitebike.nes',
-        contra: baseUrl + 'Contra.nes',
-        pokemon: baseUrl + 'PokemonCrystal.gbc'
-    };
-    return localRoms[g] || localRoms['mario'];
-}
+    <script>
+        const parts = location.pathname.split('/');
+        const game = parts.at(-1) || 'mario';
 
-function startGame() {
-    document.getElementById('start-btn').style.display = 'none';
+        const titles = {
+            pacman: 'Pac-Man',
+            mario: 'Super Mario Bros.',
+            tetris: 'Tetris',
+            excitebike: 'Excitebike',
+            contra: 'Contra',
+            naves: 'Galaga',
+            sunset: 'Sunset Riders',
+            carros: 'Spy Hunter',
+            circus: 'Circus Charlie',
+            pokemon: 'Pokémon Crystal'
+        };
 
-    const romUrl = getLocalRomPath(game);
-    
-    // Detector inteligente de núcleos según la extensión de la ROM
-    let coreType = 'nes';
-    if (romUrl.endsWith('.sfc')) {
-        coreType = 'snes';
-    } else if (romUrl.endsWith('.gbc') || romUrl.endsWith('.gb')) {
-        coreType = 'gb'; // 'gb' es el core de EmulatorJS para Game Boy y Game Boy Color
-    }
+        document.getElementById('title').textContent = titles[game] || 'Q-ARCADE';
 
-    window.EJS_player = '#game-container';
-    window.EJS_gameUrl = romUrl;
-    window.EJS_core = coreType;
-    window.EJS_unmuteOnStart = true;
-    window.EJS_color = '#c84c0c';
-    window.EJS_startOnLoaded = true;
-    window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/'; 
+        function getLocalRomPath(g) {
+            const baseUrl = 'https://raw.githubusercontent.com/kiusama0001-spec/-QArcadeBot/main/room/';
+            const localRoms = {
+                mario: baseUrl + 'SuperMarioBros.nes',
+                pacman: baseUrl + 'PacMan.nes',
+                circus: baseUrl + 'CircusCharlie.nes',
+                naves: baseUrl + 'Galaga.nes',
+                carros: baseUrl + 'SpyHunter.nes',
+                sunset: baseUrl + 'SunsetRiders.sfc',
+                tetris: baseUrl + 'Tetris.nes',
+                excitebike: baseUrl + 'Excitebike.nes',
+                contra: baseUrl + 'Contra.nes',
+                pokemon: baseUrl + 'PokemonCrystal.gbc'
+            };
+            return localRoms[g] || localRoms['mario'];
+        }
 
-    const script = document.createElement('script');
-    script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
-    document.body.appendChild(script);
-}
-</script>
+        function startGame() {
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('title').style.display = 'none';
+
+            const romUrl = getLocalRomPath(game);
+            
+            let coreType = 'nes';
+            if (romUrl.endsWith('.sfc')) {
+                coreType = 'snes';
+            } else if (romUrl.endsWith('.gbc') || romUrl.endsWith('.gb')) {
+                coreType = 'gb';
+            }
+
+            window.EJS_player = '#game-container';
+            window.EJS_gameUrl = romUrl;
+            window.EJS_core = coreType;
+            window.EJS_unmuteOnStart = true;
+            window.EJS_startOnLoaded = true;
+            window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+
+            const script = document.createElement('script');
+            script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+            document.body.appendChild(script);
+        }
+    </script>
+</body>
+</html>
