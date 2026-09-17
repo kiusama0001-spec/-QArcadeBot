@@ -36,13 +36,12 @@ const titles = {
 document.getElementById('title').textContent = titles[game] || 'Q-ARCADE';
 
 function getLocalRomPath(g) {
-    // Reemplaza 'kiusama0001-spec' y '-QArcadeBot' con tu usuario y nombre de repositorio exacto si es diferente
     const baseUrl = 'https://raw.githubusercontent.com/kiusama0001-spec/-QArcadeBot/main/room/';
     
     const localRoms = {
         mario: baseUrl + 'SuperMarioBros.nes',
         pacman: baseUrl + 'PacMan.nes',
-        circus: 'baseUrl + 'CircusCharlie.nes',
+        circus: baseUrl + 'CircusCharlie.nes',
         naves: baseUrl + 'Galaga.nes',
         carros: baseUrl + 'SpyHunter.nes',
         sunset: baseUrl + 'SunsetRiders.sfc',
