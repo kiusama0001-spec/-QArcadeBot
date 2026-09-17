@@ -2,27 +2,40 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Q-Arcade</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
+        html, body {
+            width: 100%;
+            height: 100%;
             background-color: #121212;
             color: #ffffff;
             font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #121212;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
+            z-index: 100;
         }
+
         #title {
             margin-bottom: 25px;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             text-align: center;
             color: #ffcc00;
         }
+
         #start-btn {
             padding: 16px 32px;
             font-size: 1.2rem;
@@ -34,22 +47,28 @@
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(230, 57, 70, 0.4);
         }
+
         #start-btn:active {
             transform: scale(0.96);
         }
+
         #game-container {
             width: 100vw;
             height: 100vh;
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
+            z-index: 1;
         }
     </style>
 </head>
 <body>
 
-    <h1 id="title">Q-ARCADE</h1>
-    <button id="start-btn" onclick="startGame()">🎮 EMPEZAR JUEGO</button>
+    <div id="overlay">
+        <h1 id="title">Q-ARCADE</h1>
+        <button id="start-btn" onclick="startGame()">🎮 EMPEZAR JUEGO</button>
+    </div>
+
     <div id="game-container"></div>
 
     <script>
@@ -89,8 +108,7 @@
         }
 
         function startGame() {
-            document.getElementById('start-btn').style.display = 'none';
-            document.getElementById('title').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
 
             const romUrl = getLocalRomPath(game);
             
@@ -104,7 +122,7 @@
             window.EJS_player = '#game-container';
             window.EJS_gameUrl = romUrl;
             window.EJS_core = coreType;
-            window.EJS_unmuteOnStart = true;
+            window.EJS_gameName = titles[game] || 'Game';
             window.EJS_startOnLoaded = true;
             window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
 
@@ -113,5 +131,6 @@
             document.body.appendChild(script);
         }
     </script>
+
 </body>
 </html>
