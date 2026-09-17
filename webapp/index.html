@@ -1,244 +1,64 @@
-<!doctype html><html lang="es"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Q-ArcadeBot</title>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Q-ArcadeBot - Clásicos Reales</title>
 <style>
-*{box-sizing:border-box;user-select:none}body{margin:0;background:#080808;color:white;font-family:system-ui;overflow:hidden}
-header{height:52px;padding:10px 14px;display:flex;justify-content:space-between;font-weight:800}
-main{height:calc(100dvh - 52px);display:flex;align-items:center;justify-content:center;padding:8px}
-canvas{width:min(100%,960px);aspect-ratio:16/9;background:#111;border-radius:12px;touch-action:none}
-.controls{position:fixed;bottom:14px;left:0;right:0;display:flex;justify-content:space-between;padding:0 18px;pointer-events:none}
-.controls div{display:flex;gap:8px;pointer-events:auto}
-.dpad{display:flex;flex-direction:column;align-items:center;gap:4px}
-.dpad-row{display:flex;gap:28px}
-button{width:56px;height:56px;border:0;border-radius:50%;background:#292929;color:#fff;font-size:20px}
-#start{position:fixed;inset:0;display:grid;place-items:center;background:#000b}#start button{width:auto;padding:0 26px;border-radius:16px;height:64px;font-size:20px}
-</style></head><body>
-<header><span id="title">Q-Arcade</span><span>⭐ <b id="score">0</b></span></header>
-<main><canvas id="c" width="960" height="540"></canvas></main>
-<div class="controls">
-    <div class="dpad">
-        <div><button id="u">▲</button></div>
-        <div class="dpad-row"><button id="l">◀</button><button id="r">▶</button></div>
-        <div><button id="d">▼</button></div>
-    </div>
-    <div><button id="a">A</button><button id="b">B</button></div>
-</div>
-<div id="start"><button id="go">🎮 Iniciar partida</button></div>
+*{box-sizing:border-box;user-select:none}
+body{margin:0;background:#000;color:white;font-family:'Courier New',Courier,monospace;overflow:hidden}
+header{height:46px;padding:8px 14px;display:flex;justify-content:space-between;font-weight:900;background:#111;border-bottom:2px solid #333;font-size:18px}
+main{height:calc(100dvh - 46px);display:flex;align-items:center;justify-content:center;background:#000}
+#game-container{width:100%;max-width:960px;aspect-ratio:4/3;max-height:calc(100dvh - 46px);background:#000}
+</style>
+</head>
+<body>
+<header><span id="title">Q-Arcade</span><span>🕹️ RETRO</span></header>
+<main>
+    <div id="game-container"></div>
+</main>
+
 <script>
-const c=document.getElementById('c'),x=c.getContext('2d');
-const parts=location.pathname.split('/'),game=parts.at(-1),token=new URLSearchParams(location.search).get('token')||'';
-const names={pacman:'Pac-Man',mario:'Super Mario Bros.',doom:'DOOM',naves:'Naves',sunset:'Sunset Riders',carros:'Carros',circus:'Circus Charlie'};
-document.getElementById('title').textContent=names[game]||'Q-Arcade';
+const parts = location.pathname.split('/');
+const game = parts.at(-1) || 'mario';
 
-let running=false,score=0,ended=false,left=false,right=false,up=false,down=false,btnA=false,btnB=false;
-let p={x:480,y:420,vx:0,vy:0},objs=[],particles=[];
-
-function bind(id,setter){
-    let e=document.getElementById(id);
-    ['pointerdown','pointerup','pointercancel','pointerleave'].forEach(k=>e.addEventListener(k,z=>{z.preventDefault();setter(k==='pointerdown')}));
-}
-bind('u',v=>up=v);bind('d',v=>down=v);bind('l',v=>left=v);bind('r',v=>right=v);
-document.getElementById('a').onpointerdown=()=>btnA=true;
-document.getElementById('a').onpointerup=()=>btnA=false;
-document.getElementById('b').onpointerdown=()=>btnB=true;
-document.getElementById('b').onpointerup=()=>btnB=false;
-
-function initGame(){
-    score=0;ended=false;p={x:480,y:420,vx:0,vy:0};objs=[];particles=[];
-    if(game==='pacman'){
-        // Laberinto clásico en matriz estructurada (1: Muro, 0: Punto)
-        p.x=100;p.y=100;
-        let map=[
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
-            [1,0,1,1,0,1,0,1,1,0,1,0,1,1,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,0,1,1,0,1,1,0,0,1,1,0,1,1,0,1],
-            [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-        ];
-        map.forEach((row,rIdx)=>{
-            row.forEach((cell,cIdx)=>{
-                if(cell===0) objs.push({x:cIdx*56+60,y:rIdx*65+50,type:'dot'});
-                if(cell===1) objs.push({x:cIdx*56+60,y:rIdx*65+50,w:54,h:63,type:'wall'});
-            });
-        });
-        objs.push({x:400,y:200,vx:120,vy:90,type:'ghost'},{x:600,y:300,vx:-100,vy:110,type:'ghost'});
-    }else if(game==='mario'){
-        p.x=100;p.y=380;
-        // Suelo y plataformas clásicas fijas
-        objs.push({x:0,y:450,w:960,h:90,type:'floor'});
-        objs.push({x:300,y:330,w:120,h:30,type:'block'},{x:500,y:220,w:160,h:30,type:'block'});
-        objs.push({x:450,y:410,w:40,h:40,type:'goomba'},{x:750,y:410,w:40,h:40,type:'goomba'});
-    }else if(game==='doom'){
-        p.x=480;p.y=270;
-        // Habitaciones y enemigos fijos
-        objs.push({x:200,y:150,hp:3,type:'enemy'},{x:760,y:150,hp:3,type:'enemy'},{x:480,y:400,hp:4,type:'enemy'});
-    }else if(game==='naves'){
-        p.x=480;p.y=470;
-        // Formación clásica de naves enemigas en filas (Galaga style)
-        for(let r=0;r<2;r++){
-            for(let col=0;col<6;col++){
-                objs.push({x:200+col*110,y:80+r*70,w:40,h:30,type:'ship'});
-            }
-        }
-    }else if(game==='sunset'){
-        p.x=480;p.y=420;
-        // Balcones fijos del pueblo western
-        objs.push({x:200,y:320,state:'hidden',timer:1.5,type:'outlaw'});
-        objs.push({x:480,y:320,state:'hidden',timer:2.2,type:'outlaw'});
-        objs.push({x:760,y:320,state:'hidden',timer:1.0,type:'outlaw'});
-    }else if(game==='carros'){
-        p.x=480;p.y=420;
-        // Carriles fijos de la autopista
-        objs.push({x:380,y:-50,vy:280,type:'car'},{x:580,y:-250,vy:320,type:'car'});
-    }else if(game==='circus'){
-        p.x=200;p.y=420;
-        // Obstáculos de fuego fijos del circo
-        objs.push({x:600,y:420,vx:-160,type:'hurdle'},{x:950,y:420,vx:-160,type:'hurdle'});
-    }
-}
-
-function finish(){if(ended)return;ended=true;running=false;document.getElementById('go').textContent='Enviar puntuación';document.getElementById('start').style.display='grid';document.getElementById('go').onclick=submit}
-async function submit(){if(!token){alert('Falta el token de lanzamiento.');return}let r=await fetch('/api/score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,game,score})}),j=await r.json();if(!r.ok)return alert(j.detail||'Error');alert(j.new_record?'🏆 ¡Nuevo récord!':'Puntuación guardada')}
-
-let last=0;
-function loop(t){
-    let dt=Math.min(.03,(t-last)/1000||0);last=t;
-    if(running){
-        if(game==='pacman'){
-            p.vx=((right?1:0)-(left?1:0))*180; p.vy=((down?1:0)-(up?1:0))*180;
-            let nx=p.x+p.vx*dt, ny=p.y+p.vy*dt;
-            let hitWall=false;
-            objs.forEach(o=>{if(o.type==='wall'&&Math.abs(o.x-nx)<32&&Math.abs(o.y-ny)<32)hitWall=true;});
-            if(!hitWall){p.x=nx;p.y=ny;}
-
-            objs.forEach((o,i)=>{
-                if(o.type==='dot'&&Math.hypot(o.x-p.x,o.y-p.y)<20){score+=100;objs.splice(i,1);}
-                if(o.type==='ghost'){
-                    o.x+=o.vx*dt; o.y+=o.vy*dt;
-                    if(o.x<50||o.x>910)o.vx*=-1; if(o.y<50||o.y>450)o.vy*=-1;
-                    if(Math.hypot(o.x-p.x,o.y-p.y)<22)finish();
-                }
-            });
-            if(objs.filter(o=>o.type==='dot').length===0){score+=2000;finish();}
-        }
-        else if(game==='mario'){
-            p.vx=((right?1:0)-(left?1:0))*240; p.x=Math.max(20,Math.min(940,p.x+p.vx*dt));
-            p.vy+=900*dt; p.y+=p.vy*dt;
-            
-            // Colisiones con suelo y bloques
-            objs.forEach(o=>{
-                if(o.type==='floor'||o.type==='block'){
-                    if(p.x>o.x-20&&p.x<o.x+o.w+20&&p.y>=o.y-25&&p.y<=o.y+10&&p.vy>0){
-                        p.y=o.y-25;p.vy=0;if(up||btnA)p.vy=-520;
-                    }
-                }
-                if(o.type==='goomba'){
-                    o.x-=50*dt;
-                    if(Math.abs(o.x-p.x)<30&&Math.abs(o.y-p.y)<30){
-                        if(p.vy>0){score+=300;o.y=800;p.vy=-300;}else{finish();}
-                    }
-                }
-            });
-            score+=Math.floor(dt*15);if(score>=5000)finish();
-        }
-        else if(game==='doom'){
-            p.vx=((right?1:0)-(left?1:0))*200; p.vy=((down?1:0)-(up?1:0))*200;
-            p.x=Math.max(100,Math.min(860,p.x+p.vx*dt)); p.y=Math.max(100,Math.min(440,p.y+p.vy*dt));
-            if(btnA&&Math.random()>0.3){
-                btnA=false;
-                objs.forEach(o=>{if(Math.hypot(o.x-p.x,o.y-p.y)<120){o.hp--;if(o.hp<=0){o.x=Math.random()*700+130;o.y=Math.random()*300+100;o.hp=3;score+=400;}}});
-            }
-            objs.forEach(o=>{if(Math.hypot(o.x-p.x,o.y-p.y)<35)finish();});
-            score+=Math.floor(dt*12);if(score>=4500)finish();
-        }
-        else if(game==='naves'){
-            p.vx=((right?1:0)-(left?1:0))*320; p.x=Math.max(40,Math.min(920,p.x+p.vx*dt));
-            if(btnA){btnA=false;particles.push({x:p.x,y:p.y-20,vy:-650});}
-            particles.forEach((b,i)=>{b.y+=b.vy*dt;objs.forEach((o,j)=>{if(Math.abs(o.x-b.x)<25&&Math.abs(o.y-b.y)<20){score+=200;objs.splice(j,1);particles.splice(i,1);}});});
-            if(objs.length===0){score+=1500;finish();}
-            score+=Math.floor(dt*20);
-        }
-        else if(game==='sunset'){
-            p.x=Math.max(100,Math.min(860,p.x+((right?1:0)-(left?1:0))*220*dt));
-            objs.forEach(o=>{
-                o.timer-=dt;if(o.timer<=0){o.state=o.state==='hidden'?'shoot':'hidden';o.timer=Math.random()*1.8+0.8;}
-                if(btnA&&o.state==='shoot'&&Math.abs(o.x-p.x)<90){score+=500;o.state='hidden';btnA=false;}
-                if(o.state==='shoot'&&Math.random()<0.025)finish();
-            });
-            score+=Math.floor(dt*20);if(score>=4000)finish();
-        }
-        else if(game==='carros'){
-            p.x+=((right?1:0)-(left?1:0))*380*dt; p.x=Math.max(340,Math.min(620,p.x));
-            objs.forEach(o=>{
-                o.y+=o.vy*dt;if(o.y>600)o.y=-140,o.x=340+Math.random()*280,score+=150;
-                if(Math.abs(o.x-p.x)<36&&Math.abs(o.y-p.y)<65)finish();
-            });
-        }
-        else if(game==='circus'){
-            p.vx=((right?1:0)-(left?1:0))*220; p.x=Math.max(100,Math.min(860,p.x+p.vx*dt));
-            p.vy+=1000*dt; p.y+=p.vy*dt;
-            if(p.y>420){p.y=420;p.vy=0;if(up||btnA)p.vy=-540;}
-            objs.forEach(o=>{
-                o.x+=o.vx*dt;if(o.x<-50)o.x=1000,score+=300;
-                if(Math.abs(o.x-p.x)<32&&p.y>370)finish();
-            });
-            score+=Math.floor(dt*15);if(score>=5000)finish();
-        }
-        document.getElementById('score').textContent=score;
-    }
-
-    x.clearRect(0,0,960,540);
-    x.fillStyle='#080808';x.fillRect(0,0,960,540);
-
-    // RENDERIZADO VISUAL CON NIVELES ESTRUCTURADOS
-    if(game==='pacman'){
-        objs.forEach(o=>{
-            if(o.type==='wall'){x.fillStyle='#1919a6';x.fillRect(o.x-o.w/2,o.y-o.h/2,o.w,o.h);}
-            if(o.type==='dot'){x.fillStyle='#ffb8ae';x.beginPath();x.arc(o.x,o.y,7,0,7);x.fill();}
-            if(o.type==='ghost'){x.fillStyle='#ff0000';x.beginPath();x.arc(o.x,o.y,18,0,7);x.fill();}
-        });
-        x.fillStyle='yellow';x.beginPath();x.arc(p.x,p.y,20,0,7);x.fill();
-    }else if(game==='mario'){
-        objs.forEach(o=>{
-            if(o.type==='floor'){x.fillStyle='#c84c0c';x.fillRect(o.x,o.y,o.w,o.h);x.fillStyle='#00a800';x.fillRect(o.x,o.y,o.w,12);}
-            if(o.type==='block'){x.fillStyle='#fc9838';x.fillRect(o.x,o.y,o.w,o.h);}
-            if(o.type==='goomba'){x.fillStyle='#853813';x.fillRect(o.x-16,o.y-16,32,32);}
-        });
-        x.fillStyle='#e52521';x.fillRect(p.x-16,p.y-22,32,44);
-    }else if(game==='doom'){
-        x.fillStyle='#332211';x.fillRect(150,100,660,340);
-        objs.forEach(o=>{x.fillStyle='#cc2222';x.fillRect(o.x-22,o.y-30,44,60);});
-        x.fillStyle='#44ff44';x.fillRect(p.x-16,p.y-20,32,40);
-    }else if(game==='naves'){
-        objs.forEach(o=>{x.fillStyle='#ff3333';x.fillRect(o.x-20,o.y-15,40,30);});
-        particles.forEach(b=>{x.fillStyle='white';x.fillRect(b.x-3,b.y-10,6,18);});
-        x.fillStyle='#00ffcc';x.beginPath();x.moveTo(p.x,p.y-22);x.lineTo(p.x-22,p.y+22);x.lineTo(p.x+22,p.y+22);x.fill();
-    }else if(game==='sunset'){
-        x.fillStyle='#4a3b2c';x.fillRect(150,220,660,120);
-        objs.forEach(o=>{
-            if(o.state==='hidden') { x.fillStyle='#222';x.fillRect(o.x-20,o.y-30,40,60); }
-            else { x.fillStyle='#ff2222';x.fillRect(o.x-20,o.y-30,40,60); }
-        });
-        x.fillStyle='#ffaa00';x.fillRect(p.x-16,p.y-25,32,50);
-    }else if(game==='carros'){
-        x.fillStyle='#222';x.fillRect(320,0,320,540);
-        x.strokeStyle='white';x.setLineDash([20,20]);x.lineWidth=6;x.beginPath();x.moveTo(480,0);x.lineTo(480,540);x.stroke();x.setLineDash([]);
-        objs.forEach(o=>{x.fillStyle='#ff3333';x.fillRect(o.x-20,o.y-35,40,70);});
-        x.fillStyle='#3388ff';x.fillRect(p.x-20,p.y-35,40,70);
-    }else if(game==='circus'){
-        objs.forEach(o=>{x.fillStyle='#ff8800';x.fillRect(o.x-16,o.y-35,32,70);});
-        x.fillStyle='#ff66cc';x.beginPath();x.arc(p.x,p.y-12,18,0,7);x.fill();
-    }
-
-    requestAnimationFrame(loop);
-}
-
-document.getElementById('go').onclick=()=>{
-    initGame();
-    running=true;
-    document.getElementById('start').style.display='none';
+const titles = {
+    pacman: 'Pac-Man (Original)',
+    mario: 'Super Mario Bros. (NES)',
+    doom: 'DOOM (Classic)',
+    naves: 'Galaga / Space Invaders',
+    sunset: 'Sunset Riders',
+    carros: 'Spy Hunter',
+    circus: 'Circus Charlie'
 };
-requestAnimationFrame(loop);
-</script></body></html>
+document.getElementById('title').textContent = titles[game] || 'Q-ARCADE';
+
+// Configuración de EmulatorJS usando tus archivos locales subidos al repositorio
+window.EJS_player = '#game-container';
+window.EJS_core = (game === 'doom') ? 'doom' : 'nes';
+
+// Apunta directamente al archivo ROM que subiste a tu repositorio
+window.EJS_gameUrl = getLocalRomPath(game);
+
+window.EJS_unmuteOnStart = true;
+window.EJS_color = '#c84c0c';
+window.EJS_startOnLoaded = true;
+window.EJS_pathToData = 'https://cdn.emulatorjs.org/stable/data/';
+
+function getLocalRomPath(g) {
+    // Si subiste tus ROMs a una carpeta llamada 'roms':
+    const localRoms = {
+        mario: 'roms/smb.nes',
+        pacman: 'roms/pacman.nes',
+        circus: 'roms/circus.nes',
+        naves: 'roms/galaga.nes',
+        carros: 'roms/spyhunter.nes',
+        sunset: 'roms/sunsetriders.nes',
+        doom: 'roms/DOOM.WAD'
+    };
+    return localRoms[g] || localRoms['mario'];
+}
+</script>
+<script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+</body>
+</html>
