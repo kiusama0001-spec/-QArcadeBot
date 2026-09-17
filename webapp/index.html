@@ -27,7 +27,9 @@ const game = parts.at(-1) || 'mario';
 const titles = {
     pacman: 'Pac-Man (NES)',
     mario: 'Super Mario Bros. (NES)',
-    doom: 'DOOM (SNES)',
+    tetris: 'Tetris (NES)',
+    excitebike: 'Excitebike (NES)',
+    contra: 'Contra (NES)',
     naves: 'Galaga (NES)',
     sunset: 'Sunset Riders (SNES)',
     carros: 'Spy Hunter (NES)',
@@ -37,6 +39,7 @@ document.getElementById('title').textContent = titles[game] || 'Q-ARCADE';
 
 function getLocalRomPath(g) {
     const baseUrl = 'https://raw.githubusercontent.com/kiusama0001-spec/-QArcadeBot/main/room/';
+    
     const localRoms = {
         mario: baseUrl + 'SuperMarioBros.nes',
         pacman: baseUrl + 'PacMan.nes',
@@ -44,7 +47,9 @@ function getLocalRomPath(g) {
         naves: baseUrl + 'Galaga.nes',
         carros: baseUrl + 'SpyHunter.nes',
         sunset: baseUrl + 'SunsetRiders.sfc',
-        doom: baseUrl + 'Doom.sfc'
+        tetris: baseUrl + 'Tetris.nes',
+        excitebike: baseUrl + 'Excitebike.nes',
+        contra: baseUrl + 'Contra.nes'
     };
     return localRoms[g] || localRoms['mario'];
 }
@@ -60,7 +65,6 @@ function startGame() {
     window.EJS_unmuteOnStart = true;
     window.EJS_color = '#c84c0c';
     window.EJS_startOnLoaded = true;
-    // AQUÍ ESTÁ LA CORRECCIÓN CLAVE: pathtodata en minúsculas
     window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/'; 
 
     const script = document.createElement('script');
