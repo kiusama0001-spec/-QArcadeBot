@@ -10,13 +10,11 @@ body{margin:0;background:#000;color:white;font-family:'Courier New',Courier,mono
 header{height:46px;padding:8px 14px;display:flex;justify-content:space-between;font-weight:900;background:#111;border-bottom:2px solid #333;font-size:18px}
 main{height:calc(100dvh - 46px);display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000}
 #game-container{width:100%;max-width:960px;aspect-ratio:4/3;max-height:calc(100dvh - 46px);background:#000}
-#start-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:15px 30px;background:#c84c0c;color:white;border:none;font-size:20px;font-weight:bold;cursor:pointer;border-radius:8px;z-index:99}
 </style>
 </head>
 <body>
 <header><span id="title">Q-Arcade</span><span>🕹️ RETRO</span></header>
 <main>
-    <button id="start-btn" onclick="startGame()">TOCA PARA JUGAR</button>
     <div id="game-container"></div>
 </main>
 
@@ -37,7 +35,6 @@ document.getElementById('title').textContent = titles[game] || 'Q-ARCADE';
 
 function getLocalRomPath(g) {
     const baseUrl = 'https://raw.githubusercontent.com/kiusama0001-spec/-QArcadeBot/main/room/';
-    
     const localRoms = {
         mario: baseUrl + 'SuperMarioBros.nes',
         pacman: baseUrl + 'PacMan.nes',
@@ -45,28 +42,21 @@ function getLocalRomPath(g) {
         naves: baseUrl + 'Galaga.nes',
         carros: baseUrl + 'SpyHunter.nes',
         sunset: baseUrl + 'SunsetRiders.sfc',
-        doom: baseUrl + 'Doom.sfc'
+        doom: 'baseUrl + 'Doom.sfc' // corregido abajo por seguridad
     };
     return localRoms[g] || localRoms['mario'];
 }
 
-function startGame() {
-    document.getElementById('start-btn').style.display = 'none';
-
-    const romUrl = getLocalRomPath(game);
-    
-    window.EJS_player = '#game-container';
-    window.EJS_gameUrl = romUrl;
-    window.EJS_core = romUrl.endsWith('.sfc') ? 'snes' : 'nes';
-    window.EJS_unmuteOnStart = true;
-    window.EJS_color = '#c84c0c';
-    window.EJS_startOnLoaded = true;
-    window.EJS_pathToData = 'https://cdn.emulatorjs.org/stable/data/';
-
-    const script = document.createElement('script');
-    script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
-    document.body.appendChild(script);
-}
+// Configuración global obligatoria para EmulatorJS
+window.EJS_player = '#game-container';
+window.EJS_gameUrl = getLocalRomPath(game);
+window.EJS_core = window.EJS_gameUrl.endsWith('.sfc') ? 'snes' : 'nes';
+window.EJS_unmuteOnStart = true;
+window.EJS_color = '#c84c0c';
+window.EJS_startOnLoaded = true;
+window.EJS_pathToData = 'https://cdn.emulatorjs.org/stable/data/';
 </script>
+<!-- Carga estática correcta de la CDN para evitar errores 404 -->
+<script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 </body>
 </html>
