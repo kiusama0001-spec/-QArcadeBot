@@ -6,79 +6,68 @@
 <title>Q-ArcadeBot</title>
 <style>
 *{box-sizing:border-box;user-select:none}
-body{margin:0;background:#000;color:white;font-family:'Courier New',Courier,monospace;overflow:hidden;display:flex;flex-direction:column;height:100dvh}
+body{margin:0;background:#000;color:white;font-family:'Courier New',Courier,monospace;overflow:hidden}
 header{height:46px;padding:8px 14px;display:flex;justify-content:space-between;font-weight:900;background:#111;border-bottom:2px solid #333;font-size:18px}
-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;position:relative}
-canvas{width:100%;max-width:640px;aspect-ratio:4/3;background:#000;image-rendering:pixelated}
-.pads{display:grid;grid-template-columns:repeat(3,60px);gap:10px;margin-top:15px}
-button{background:#222;color:#fff;border:2px solid #555;font-weight:bold;border-radius:8px;font-size:16px;touch-action:manipulation}
-.btn-action{display:flex;gap:20px;margin-top:10px}
-.btn-action button{width:80px;height:45px;background:#c84c0c}
+main{height:calc(100dvh - 46px);display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000}
+#game-container{width:100%;max-width:960px;aspect-ratio:4/3;max-height:calc(100dvh - 46px);background:#000}
+#start-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:15px 30px;background:#c84c0c;color:white;border:none;font-size:20px;font-weight:bold;cursor:pointer;border-radius:8px;z-index:99}
 </style>
 </head>
 <body>
-<header><span id="title">Q-Arcade</span><span>🕹️ NES</span></header>
+<header><span id="title">Q-Arcade</span><span>🕹️ RETRO</span></header>
 <main>
-    <canvas id="emscripten" width="256" height="240"></canvas>
-    <div class="pads">
-        <div></div><button ontouchstart="k(38,true)" ontouchend="k(38,false)">▲</button><div></div>
-        <button ontouchstart="k(37,true)" ontouchend="k(37,false)">◀</button><div></div><button ontouchstart="k(39,true)" ontouchend="k(39,false)">▶</button>
-        <div></div><button ontouchstart="k(40,true)" ontouchend="k(40,false)">▼</button><div></div>
-    </div>
-    <div class="btn-action">
-        <button ontouchstart="k(65,true)" ontouchend="k(65,false)">A</button>
-        <button ontouchstart="k(83,true)" ontouchend="k(83,false)">B</button>
-    </div>
+    <button id="start-btn" onclick="startGame()">TOCA PARA JUGAR</button>
+    <div id="game-container"></div>
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsnes/1.2.0/jsnes.min.js"></script>
 <script>
 const parts = location.pathname.split('/');
 const game = parts.at(-1) || 'mario';
 
-const roms = {
-    mario: 'room/SuperMarioBros.nes',
-    pacman: 'room/PacMan.nes',
-    circus: 'room/CircusCharlie.nes',
-    naves: 'room/Galaga.nes',
-    carros: 'room/SpyHunter.nes'
+const titles = {
+    pacman: 'Pac-Man (NES)',
+    mario: 'Super Mario Bros. (NES)',
+    doom: 'DOOM (SNES)',
+    naves: 'Galaga (NES)',
+    sunset: 'Sunset Riders (SNES)',
+    carros: 'Spy Hunter (NES)',
+    circus: 'Circus Charlie (NES)'
 };
+document.getElementById('title').textContent = titles[game] || 'Q-ARCADE';
 
-document.getElementById('title').textContent = game.toUpperCase();
-
-const canvas = document.getElementById('emscripten');
-const ctx = canvas.getContext('2d');
-const framebuffer = ctx.createImageData(256, 240);
-
-let nes = new jsnes.NES({
-    onFrame: function(data) {
-        for (let i = 0; i < data.length; i++) {
-            let pixel = data[i];
-            framebuffer.data[i * 4] = (pixel & 0xFF0000) >> 16;
-            framebuffer.data[i * 4 + 1] = (pixel & 0xFF00) >> 8;
-            framebuffer.data[i * 4 + 2] = pixel & 0xFF;
-            framebuffer.data[i * 4 + 3] = 0xFF;
-        }
-        ctx.putImageData(framebuffer, 0, 0);
-    },
-    onAudioSample: function(sample) {}
-});
-
-function k(code, down) {
-    if (down) nes.buttonDown(1, code);
-    else nes.buttonUp(1, code);
+function getLocalRomPath(g) {
+    // Reemplaza 'kiusama0001-spec' y '-QArcadeBot' con tu usuario y nombre de repositorio exacto si es diferente
+    const baseUrl = 'https://raw.githubusercontent.com/kiusama0001-spec/-QArcadeBot/main/room/';
+    
+    const localRoms = {
+        mario: baseUrl + 'SuperMarioBros.nes',
+        pacman: baseUrl + 'PacMan.nes',
+        circus: 'baseUrl + 'CircusCharlie.nes',
+        naves: baseUrl + 'Galaga.nes',
+        carros: baseUrl + 'SpyHunter.nes',
+        sunset: baseUrl + 'SunsetRiders.sfc',
+        doom: baseUrl + 'Doom.sfc'
+    };
+    return localRoms[g] || localRoms['mario'];
 }
 
-fetch(roms[game] || roms.mario)
-    .then(res => res.arrayBuffer())
-    .then(buffer => {
-        let romData = new Uint8Array(buffer);
-        nes.loadROM(String.fromCharCode.apply(null, romData));
-        let interval = setInterval(() => { nes.frame(); }, 1000 / 60);
-    })
-    .catch(err => {
-        alert("Error cargando la ROM: " + err);
-    });
+function startGame() {
+    document.getElementById('start-btn').style.display = 'none';
+
+    const romUrl = getLocalRomPath(game);
+    
+    window.EJS_player = '#game-container';
+    window.EJS_gameUrl = romUrl;
+    window.EJS_core = romUrl.endsWith('.sfc') ? 'snes' : 'nes';
+    window.EJS_unmuteOnStart = true;
+    window.EJS_color = '#c84c0c';
+    window.EJS_startOnLoaded = true;
+    window.EJS_pathToData = 'https://cdn.emulatorjs.org/stable/data/';
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+    document.body.appendChild(script);
+}
 </script>
 </body>
 </html>
