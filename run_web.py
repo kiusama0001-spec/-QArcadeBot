@@ -1,22 +1,19 @@
 import os
-import threading
+import subprocess
 import uvicorn
 from webapp.app import app
-import asyncio
-from bot.main import main as run_telegram_bot
-
-def start_bot():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        loop.run_until_complete(run_telegram_bot())
-    except Exception as e:
-        print(f"Error en el bot: {e}")
 
 if __name__ == "__main__":
-    bot_thread = threading.Thread(target=start_bot, daemon=True)
-    bot_thread.start()
-    print("Bot de Telegram iniciado en segundo plano...")
+    # 1. Arrancamos el bot de Telegram como un proceso independiente del sistema
+    print("Iniciando el bot de Telegram...")
+    bot_process = subprocess.Popen(["python", "run_bot.py"])
 
-    port = int(os.environ.get("PORT", 10000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    try:
+        # 2. Obtenemos el puerto dinámico de Render
+        port = int(os.environ.get("PORT", 10000))
+        
+        # 3. Arrancamos el servidor web para mantener activo a Render
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    finally:
+        # Si el servidor se apaga, cerramos también el bot limpiamente
+        bot_process.terminate()
