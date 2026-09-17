@@ -68,6 +68,5 @@ async def submit(p: Score):
       "ok": True,
       "personal_best": personal,
       "new_record": record,
-      "season"
-      : season,
+      "season": season,
   }
